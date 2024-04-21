@@ -1,27 +1,38 @@
 import instaloader
+from tqdm import tqdm
 
 def main():
     username = input("Enter your Instagram username: ")
     password = input("Enter your Instagram password: ")
 
+    print(f"Fetching followers and followees of", username, "... This could take a few minutes!")
+
     L = instaloader.Instaloader()
 
-    # Login
+    #login
     L.login(username, password)
 
-    # Obtain profile metadata
+    #obtain profile metadata
     profile = instaloader.Profile.from_username(L.context, username)
 
-    # Get your followers
-    followers = set(profile.get_followers())
+    #prepare to fetch followers
+    followers = set()
+    followers_gen = profile.get_followers()
+    #estimate the total number of followers for the progress bar
+    for follower in tqdm(followers_gen, desc="Fetching followers", total=profile.followers):
+        followers.add(follower)
 
-    # Get users you're following
-    following = set(profile.get_followees())
+    #prepare to fetch followees
+    following = set()
+    followees_gen = profile.get_followees()
+    #estimate the total number of followees for the progress bar
+    for followee in tqdm(followees_gen, desc="Fetching following", total=profile.followees):
+        following.add(followee)
 
-    # Find users you follow but don't follow you back
+    #find users you follow but don't follow you back
     not_following_back = following - followers
 
-    # Save usernames to a text file
+    #save usernames to a text file
     with open('not_following_back.txt', 'w') as file:
         for user in not_following_back:
             file.write(user.username + '\n')
