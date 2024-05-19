@@ -1,9 +1,10 @@
 import instaloader
 from tqdm import tqdm
+from getpass import getpass
 
 def main():
     username = input("Enter your Instagram username: ")
-    password = input("Enter your Instagram password: ")
+    password = getpass("Enter your Instagram password: ")
 
     print(f"Fetching followers and followees of", username, "... This could take a few minutes!")
 
@@ -32,12 +33,28 @@ def main():
     #find users you follow but don't follow you back
     not_following_back = following - followers
 
+    #prepare verified/unverified containers
+    not_following_back_verified = set()
+    not_following_back_unverified = set()
+
+    #sort verified/unverified users from the not_following_back set
+    for user in tqdm(not_following_back, desc="Checking if users are verified", total=len(not_following_back)):
+        if user.is_verified:
+            not_following_back_verified.add(user)
+        else:
+            not_following_back_unverified.add(user)
+
     #save usernames to a text file
-    with open('not_following_back.txt', 'w') as file:
-        for user in not_following_back:
+    with open('not_following_back_verified.txt', 'w') as file:
+        for user in not_following_back_verified:
+            file.write(user.username + '\n')
+    
+    with open('not_following_back_unverified.txt', 'w') as file:
+        for user in not_following_back_unverified:
             file.write(user.username + '\n')
 
-    print("List of people you follow but don't follow you back has been saved to not_following_back.txt")
+    print("List of verified people you follow but don't follow you back has been saved to not_following_back_verified.txt")
+    print("List of unverified people you follow but don't follow you back has been saved to not_following_back_verified.txt")
 
 if __name__ == "__main__":
     main()
