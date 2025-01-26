@@ -1,6 +1,7 @@
 import instaloader
 from tqdm import tqdm
 from getpass import getpass
+import time
 
 def main():
     username = input("Enter your Instagram username: ")
@@ -10,25 +11,50 @@ def main():
 
     L = instaloader.Instaloader()
 
-    #login
-    L.login(username, password)
+    try:
+        # Login with more robust error handling
+        print("Attempting to log in...")
+        L.login(username, password)
+        
+        # Add a longer delay after login
+        print("Login successful! Waiting 10 seconds before proceeding...")
+        time.sleep(10)
+        
+        # Verify login was successful
+        test_profile = instaloader.Profile.from_username(L.context, username)
+        if not L.context.is_logged_in:
+            raise Exception("Login failed - please check your credentials")
+            
+        print("Login verified!")
+        
+        #obtain profile metadata
+        profile = test_profile
 
-    #obtain profile metadata
-    profile = instaloader.Profile.from_username(L.context, username)
+        # Add delay before fetching followers
+        time.sleep(5)
+        
+        #prepare to fetch followers
+        followers = set()
+        followers_gen = profile.get_followers()
+        #estimate the total number of followers for the progress bar
+        for follower in tqdm(followers_gen, desc="Fetching followers", total=profile.followers):
+            followers.add(follower)
+            time.sleep(2)  # Add delay between each follower fetch
 
-    #prepare to fetch followers
-    followers = set()
-    followers_gen = profile.get_followers()
-    #estimate the total number of followers for the progress bar
-    for follower in tqdm(followers_gen, desc="Fetching followers", total=profile.followers):
-        followers.add(follower)
+        # Add delay before fetching following
+        time.sleep(5)
 
-    #prepare to fetch followees
-    following = set()
-    followees_gen = profile.get_followees()
-    #estimate the total number of followees for the progress bar
-    for followee in tqdm(followees_gen, desc="Fetching following", total=profile.followees):
-        following.add(followee)
+        #prepare to fetch followees
+        following = set()
+        followees_gen = profile.get_followees()
+        #estimate the total number of followees for the progress bar
+        for followee in tqdm(followees_gen, desc="Fetching following", total=profile.followees):
+            following.add(followee)
+            time.sleep(2)  # Add delay between each following fetch
+
+    except Exception as e:
+        print(f"Login failed: {e}")
+        return
 
     #find users you follow but don't follow you back
     not_following_back = following - followers
